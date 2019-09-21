@@ -1,0 +1,6 @@
+.gameboard {
+    display: block;
+    margin: auto;
+
+    background-color: hsl(0, 0%, 50%);
+}

@@ -19,6 +19,11 @@ module.exports = {
             title: "Hues Amazing!",
         }),
     ],
+    resolve: {
+        alias: {
+            d3: 'd3/dist/d3.js',
+        },
+    },
     module: {
         rules: [
             {
