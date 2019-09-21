@@ -1,0 +1,27 @@
+{
+  "name": "@douglyuckling/hues-amazing",
+  "version": "0.0.0",
+  "author": "Douglas Paul <douglas.w.paul@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --host 0.0.0.0",
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.0",
+    "@babel/preset-env": "^7.6.0",
+    "babel-loader": "^8.0.6",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^3.2.0",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^1.0.0",
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.1"
+  },
+  "dependencies": {
+    "core-js": "^3.2.1",
+    "regenerator-runtime": "^0.13.3"
+  }
+}
