@@ -22,14 +22,4 @@ const nominalBoardWidth = Math.floor(nominalBoardHeight * 0.618);
 
 gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
 
-function loopAnimation() {
-    gameboard.animateTilesIn()
-        .then(() => {
-            return gameboard.animateTilesOut();
-        })
-        .then(() => {
-            loopAnimation();
-        });
-}
-
-loopAnimation();
+gameboard.start();
