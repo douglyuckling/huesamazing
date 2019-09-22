@@ -11,26 +11,36 @@ class Level {
         this.interpolateFn = d3.interpolateRgb;
     }
 
-    createTiles() {
+    createSockets() {
         const colors = this.computeTileColors();
-        const tiles = new Array(this.nRows * this.nCols);
+        const sockets = new Array(this.nRows * this.nCols);
         for (let j = 0; j < this.nRows; j++) {
             for (let i = 0; i < this.nCols; i++) {
-                const tileId = `${i},${j}`;
-                tiles[j * this.nCols + i] = {
-                    id: tileId,
+                const id = `${i},${j}`;
+                const socket = {
+                    id: id,
+                    col: i,
+                    row: j,
+                    pinned: this.pinnedTileIds.has(id),
+                    position: {x: NaN, y: NaN},
+                    dimensions: {width: NaN, height: NaN},
+                    bounds: {xMin: NaN, xMax: NaN, yMin: NaN, yMax: NaN},
+                };
+                sockets[j * this.nCols + i] = socket;
+                socket.tile = {
+                    id: id,
                     col: i,
                     row: j,
                     color: d3.color(colors[j][i]),
+                    pinned: socket.pinned,
                     x: NaN,
                     y: NaN,
                     width: NaN,
                     height: NaN,
-                    pinned: this.pinnedTileIds.has(tileId),
                 };
             }
         }
-        return tiles;
+        return sockets;
     }
 
     computeTileColors() {

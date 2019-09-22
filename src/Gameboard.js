@@ -10,7 +10,8 @@ class Gameboard {
         this.rootSelection = d3.select(containerEl).append('svg').attr('class', 'gameboard');
         this.rootEl = this.rootSelection.node();
         this.level = level;
-        this.tiles = this.level.createTiles();
+        this.sockets = this.level.createSockets();
+        this.tiles = this.sockets.map(socket => socket.tile);
         this.mouseInteraction = new GameboardMouseInteraction(this);
         this.attachEventListeners();
     }
@@ -28,11 +29,23 @@ class Gameboard {
             .attr('width', boardWidth)
             .attr('height', boardHeight);
 
-        for (const tile of this.tiles) {
-            tile.x = (tile.col + 0.5) * tileWidth;
-            tile.y = (tile.row + 0.5) * tileHeight;
-            tile.width = tileWidth;
-            tile.height = tileHeight;
+        for (const socket of this.sockets) {
+            Object.assign(socket.position, {
+                x: (socket.col + 0.5) * tileWidth,
+                y: (socket.row + 0.5) * tileHeight,
+            });
+            Object.assign(socket.dimensions, {
+                width: tileWidth,
+                height: tileHeight,
+            });
+            Object.assign(socket.bounds, {
+                xMin: socket.position.x - socket.dimensions.width / 2,
+                xMax: socket.position.x + socket.dimensions.width / 2,
+                yMin: socket.position.y - socket.dimensions.height / 2,
+                yMax: socket.position.y + socket.dimensions.height / 2,
+            });
+
+            Object.assign(socket.tile, socket.position, socket.dimensions);
         }
 
         this.defaultTileDimensions = Object.freeze({
@@ -60,10 +73,22 @@ class Gameboard {
         this.mouseInteraction.emitter.on('completeTileSelectionBasedSwapGesture', (...args) => this.onCompleteTileSelectionBasedSwapGesture(...args));
     }
 
+    getSocketAtPosition(x, y) {
+        return this.sockets.find(socket => {
+            return (
+                x >= socket.bounds.xMin && x <= socket.bounds.xMax &&
+                y >= socket.bounds.yMin && y <= socket.bounds.yMax);
+        });
+    }
+
+    getSocketHoldingTile(tile) {
+        return this.sockets.find(socket => socket.tile === tile);
+    }
+
     onBeginTileGesture(gesture) {
         Object.assign(gesture.tile, this.selectedTileDimensions);
 
-        d3.select(gesture.tileEl).datum(gesture.tile)
+        this.getTilesSelection([gesture.tile])
             .raise()
             .transition()
             .call(updatingTileSelection => {
@@ -72,16 +97,14 @@ class Gameboard {
     }
 
     onUpdateTileGesture(gesture) {
-        const tileSelection = d3.select(gesture.tileEl).datum(gesture.tile);
-
-        tileSelection
+        this.getTilesSelection([gesture.tile])
             .attr('transform', d => `translate(${d.x}, ${d.y})`);
     }
 
     onCompleteTileDragGesture(gesture) {
-        Object.assign(gesture.tile, this.defaultTileDimensions, gesture.originalPosition);
+        Object.assign(gesture.tile, this.defaultTileDimensions, gesture.originalSocket.position);
 
-        d3.select(gesture.tileEl).datum(gesture.tile)
+        this.getTilesSelection([gesture.tile])
             .transition()
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
@@ -98,8 +121,12 @@ class Gameboard {
     }
 
     onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
-        Object.assign(socketA.tile, socketB.position, this.defaultTileDimensions);
-        Object.assign(socketB.tile, socketA.position, this.defaultTileDimensions);
+        const tempTile = socketA.tile;
+        socketA.tile = socketB.tile;
+        socketB.tile = tempTile;
+
+        Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
+        Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
 
         this.getTilesSelection([socketA.tile, socketB.tile])
             .transition().duration(500)

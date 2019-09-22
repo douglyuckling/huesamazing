@@ -45,17 +45,12 @@ class GameboardMouseInteraction {
 
         if (tile.pinned) { return; }
 
+        const originalSocket = this.gameboard.getSocketHoldingTile(tile);
+
         const gesture = {
             tile: tile,
-            tileEl: tileEl,
-            originalPosition: {x: tile.x, y: tile.y},
+            originalSocket: originalSocket,
             grabOffset: getEventCoordinatesRelativeToSvgElement(mouseDownEvent, tileEl),
-            dragThresholds: {
-                xMin: tile.x - (tile.width / 2),
-                xMax: tile.x + (tile.width / 2),
-                yMin: tile.y - (tile.height / 2),
-                yMax: tile.y + (tile.height / 2),
-            },
             draggedOverOtherTiles: false,
             end: () => {
                 window.removeEventListener('mousemove', onMouseMove);
@@ -72,8 +67,8 @@ class GameboardMouseInteraction {
             tile.x = mouse.x - gesture.grabOffset.x;
             tile.y = mouse.y - gesture.grabOffset.y;
 
-            if (tile.x < gesture.dragThresholds.xMin || tile.x > gesture.dragThresholds.xMax ||
-                tile.y < gesture.dragThresholds.yMin || tile.y > gesture.dragThresholds.yMax) {
+            if (tile.x < gesture.originalSocket.bounds.xMin || tile.x > gesture.originalSocket.bounds.xMax ||
+                tile.y < gesture.originalSocket.bounds.yMin || tile.y > gesture.originalSocket.bounds.yMax) {
                 gesture.draggedOverOtherTiles = true;
             }
 
@@ -106,25 +101,13 @@ class GameboardMouseInteraction {
 
     onCompleteTileSelectionGesture(gesture) {
         if (this.selectedTileGesture) {
-            const socketA = {
-                tile: this.selectedTileGesture.tile,
-                tileEl: this.selectedTileGesture.tileEl,
-                position: this.selectedTileGesture.originalPosition,
-            };
-            const socketB = {
-                tile: gesture.tile,
-                tileEl: gesture.tileEl,
-                position: gesture.originalPosition,
-            };
+            const socketA = this.selectedTileGesture.originalSocket;
+            const socketB = gesture.originalSocket;
             this.selectedTileGesture = null;
 
             this.emitter.emit('completeTileSelectionBasedSwapGesture', socketA, socketB);
         } else {
-            const socket = {
-                tile: gesture.tile,
-                tileEl: gesture.tileEl,
-                position: gesture.originalPosition,
-            };
+            const socket = gesture.originalSocket;
 
             this.selectedTileGesture = gesture;
 
