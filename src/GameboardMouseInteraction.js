@@ -70,6 +70,12 @@ class GameboardMouseInteraction {
             if (tile.x < gesture.originalSocket.bounds.xMin || tile.x > gesture.originalSocket.bounds.xMax ||
                 tile.y < gesture.originalSocket.bounds.yMin || tile.y > gesture.originalSocket.bounds.yMax) {
                 gesture.draggedOverOtherTiles = true;
+
+                if (this.selectedTileGesture) {
+                    const selectedSocket = this.selectedTileGesture.originalSocket;
+                    this.selectedTileGesture = null;
+                    this.emitter.emit('abortTileSelectionBasedSwapGesture', selectedSocket);
+                }
             }
 
             this.emitter.emit('updateTileGesture', gesture);
@@ -96,7 +102,12 @@ class GameboardMouseInteraction {
     }
 
     onCompleteTileDragGesture(gesture) {
-        this.emitter.emit('completeTileDragGesture', gesture);
+        const targetSocket = this.gameboard.getSocketAtPosition(gesture.tile.x, gesture.tile.y);
+        if (targetSocket && targetSocket !== gesture.originalSocket && !targetSocket.pinned) {
+            this.emitter.emit('completeTileDragBasedSwapGesture', gesture.originalSocket, targetSocket);
+        } else {
+            this.emitter.emit('abortTileDragGesture', gesture.originalSocket);
+        }
     }
 
     onCompleteTileSelectionGesture(gesture) {

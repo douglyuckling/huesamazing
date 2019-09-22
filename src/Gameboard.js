@@ -68,7 +68,8 @@ class Gameboard {
     attachEventListeners() {
         this.mouseInteraction.emitter.on('beginTileGesture', (...args) => this.onBeginTileGesture(...args));
         this.mouseInteraction.emitter.on('updateTileGesture', (...args) => this.onUpdateTileGesture(...args));
-        this.mouseInteraction.emitter.on('completeTileDragGesture', (...args) => this.onCompleteTileDragGesture(...args));
+        this.mouseInteraction.emitter.on('completeTileDragBasedSwapGesture', (...args) => this.onCompleteTileDragBasedSwapGesture(...args));
+        this.mouseInteraction.emitter.on('abortTileDragGesture', (...args) => this.onAbortTileDragGesture(...args));
         this.mouseInteraction.emitter.on('completeTileSelectionGesture', (...args) => this.onCompleteTileSelectionGesture(...args));
         this.mouseInteraction.emitter.on('completeTileSelectionBasedSwapGesture', (...args) => this.onCompleteTileSelectionBasedSwapGesture(...args));
     }
@@ -101,10 +102,27 @@ class Gameboard {
             .attr('transform', d => `translate(${d.x}, ${d.y})`);
     }
 
-    onCompleteTileDragGesture(gesture) {
-        Object.assign(gesture.tile, this.defaultTileDimensions, gesture.originalSocket.position);
+    onCompleteTileDragBasedSwapGesture(socketA, socketB) {
+        const tempTile = socketA.tile;
+        socketA.tile = socketB.tile;
+        socketB.tile = tempTile;
 
-        this.getTilesSelection([gesture.tile])
+        Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
+        Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
+
+        this.getTilesSelection([socketA.tile, socketB.tile])
+            .raise()
+            .transition().duration(500)
+            .attr('transform', d => `translate(${d.x}, ${d.y})`)
+            .call(updatingTileSelection => {
+                this.applyTileDimensions(updatingTileSelection);
+            });
+    }
+
+    onAbortTileDragGesture(originalSocket) {
+        Object.assign(originalSocket.tile, originalSocket.position, this.defaultTileDimensions);
+
+        this.getTilesSelection([originalSocket.tile])
             .transition()
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
