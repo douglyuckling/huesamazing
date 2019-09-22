@@ -12,6 +12,7 @@ class Gameboard {
         this.level = level;
         this.sockets = this.level.createSockets();
         this.tiles = this.sockets.map(socket => socket.tile);
+        this.numberOfMoves = 0;
         this.mouseInteraction = new GameboardMouseInteraction(this);
         this.attachEventListeners();
     }
@@ -69,9 +70,10 @@ class Gameboard {
         this.mouseInteraction.emitter.on('beginTileGesture', (...args) => this.onBeginTileGesture(...args));
         this.mouseInteraction.emitter.on('updateTileGesture', (...args) => this.onUpdateTileGesture(...args));
         this.mouseInteraction.emitter.on('completeTileDragBasedSwapGesture', (...args) => this.onCompleteTileDragBasedSwapGesture(...args));
-        this.mouseInteraction.emitter.on('abortTileDragGesture', (...args) => this.onAbortTileDragGesture(...args));
+        this.mouseInteraction.emitter.on('abortTileDragBasedSwapGesture', (...args) => this.onAbortTileDragBasedSwapGesture(...args));
         this.mouseInteraction.emitter.on('completeTileSelectionGesture', (...args) => this.onCompleteTileSelectionGesture(...args));
         this.mouseInteraction.emitter.on('completeTileSelectionBasedSwapGesture', (...args) => this.onCompleteTileSelectionBasedSwapGesture(...args));
+        this.mouseInteraction.emitter.on('abortTileSelectionBasedSwapGesture', (...args) => this.onAbortTileSelectionBasedSwapGesture(...args));
     }
 
     getSocketAtPosition(x, y) {
@@ -117,9 +119,10 @@ class Gameboard {
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
             });
+        this.incrementNumberOfMoves();
     }
 
-    onAbortTileDragGesture(originalSocket) {
+    onAbortTileDragBasedSwapGesture(originalSocket, draggedOverOtherTiles) {
         Object.assign(originalSocket.tile, originalSocket.position, this.defaultTileDimensions);
 
         this.getTilesSelection([originalSocket.tile])
@@ -128,6 +131,10 @@ class Gameboard {
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
             });
+
+        if (draggedOverOtherTiles) {
+            this.incrementNumberOfMoves();
+        }
     }
 
     onCompleteTileSelectionGesture(socket) {
@@ -148,6 +155,19 @@ class Gameboard {
 
         this.getTilesSelection([socketA.tile, socketB.tile])
             .transition().duration(500)
+            .attr('transform', d => `translate(${d.x}, ${d.y})`)
+            .call(updatingTileSelection => {
+                this.applyTileDimensions(updatingTileSelection);
+            });
+
+        this.incrementNumberOfMoves();
+    }
+
+    onAbortTileSelectionBasedSwapGesture(originalSocket) {
+        Object.assign(originalSocket.tile, originalSocket.position, this.defaultTileDimensions);
+
+        this.getTilesSelection([originalSocket.tile])
+            .transition()
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
@@ -227,6 +247,10 @@ class Gameboard {
             .attr('y', d => -0.5 * d.height)
             .attr('width', d => d.width)
             .attr('height', d => d.height);
+    }
+
+    incrementNumberOfMoves() {
+        this.numberOfMoves += 1;
     }
 
 }

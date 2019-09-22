@@ -106,7 +106,7 @@ class GameboardMouseInteraction {
         if (targetSocket && targetSocket !== gesture.originalSocket && !targetSocket.pinned) {
             this.emitter.emit('completeTileDragBasedSwapGesture', gesture.originalSocket, targetSocket);
         } else {
-            this.emitter.emit('abortTileDragGesture', gesture.originalSocket);
+            this.emitter.emit('abortTileDragBasedSwapGesture', gesture.originalSocket, gesture.draggedOverOtherTiles);
         }
     }
 
@@ -116,7 +116,12 @@ class GameboardMouseInteraction {
             const socketB = gesture.originalSocket;
             this.selectedTileGesture = null;
 
-            this.emitter.emit('completeTileSelectionBasedSwapGesture', socketA, socketB);
+            if (socketA !== socketB) {
+                this.emitter.emit('completeTileSelectionBasedSwapGesture', socketA, socketB);
+            } else {
+                this.emitter.emit('abortTileSelectionBasedSwapGesture', socketA);
+            }
+
         } else {
             const socket = gesture.originalSocket;
 
