@@ -35,8 +35,14 @@ class Gameboard {
             tile.height = tileHeight;
         }
 
-        this.tileWidth = tileWidth;
-        this.tileHeight = tileHeight;
+        this.defaultTileDimensions = Object.freeze({
+            width: tileWidth,
+            height: tileHeight,
+        });
+        this.selectedTileDimensions = Object.freeze({
+            width: tileWidth * activeTileScalingFactor,
+            height: tileHeight * activeTileScalingFactor,
+        });
     }
 
     start() {
@@ -51,13 +57,11 @@ class Gameboard {
         this.mouseInteraction.emitter.on('updateTileGesture', (...args) => this.onUpdateTileGesture(...args));
         this.mouseInteraction.emitter.on('completeTileDragGesture', (...args) => this.onCompleteTileDragGesture(...args));
         this.mouseInteraction.emitter.on('completeTileSelectionGesture', (...args) => this.onCompleteTileSelectionGesture(...args));
+        this.mouseInteraction.emitter.on('completeTileSelectionBasedSwapGesture', (...args) => this.onCompleteTileSelectionBasedSwapGesture(...args));
     }
 
     onBeginTileGesture(gesture) {
-        Object.assign(gesture.tile, {
-            width: this.tileWidth * activeTileScalingFactor,
-            height: this.tileHeight * activeTileScalingFactor,
-        });
+        Object.assign(gesture.tile, this.selectedTileDimensions);
 
         d3.select(gesture.tileEl).datum(gesture.tile)
             .raise()
@@ -75,12 +79,7 @@ class Gameboard {
     }
 
     onCompleteTileDragGesture(gesture) {
-        Object.assign(gesture.tile, {
-            width: this.tileWidth,
-            height: this.tileHeight,
-            x: gesture.originalPosition.x,
-            y: gesture.originalPosition.y,
-        });
+        Object.assign(gesture.tile, this.defaultTileDimensions, gesture.originalPosition);
 
         d3.select(gesture.tileEl).datum(gesture.tile)
             .transition()
@@ -90,14 +89,28 @@ class Gameboard {
             });
     }
 
-    onCompleteTileSelectionGesture(gesture) {
-        d3.select(gesture.tileEl).datum(gesture.tile)
+    onCompleteTileSelectionGesture(socket) {
+        Object.assign(socket.tile, socket.position);
+
+        this.getTilesSelection([socket.tile])
             .transition().duration(100)
             .attr('transform', d => `translate(${d.x}, ${d.y})`);
     }
 
-    getTilesSelection() {
-        return this.rootSelection.selectAll('g.tile').data(this.tiles, d => d.id);
+    onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
+        Object.assign(socketA.tile, socketB.position, this.defaultTileDimensions);
+        Object.assign(socketB.tile, socketA.position, this.defaultTileDimensions);
+
+        this.getTilesSelection([socketA.tile, socketB.tile])
+            .transition().duration(500)
+            .attr('transform', d => `translate(${d.x}, ${d.y})`)
+            .call(updatingTileSelection => {
+                this.applyTileDimensions(updatingTileSelection);
+            });
+    }
+
+    getTilesSelection(tiles = this.tiles) {
+        return this.rootSelection.selectAll('g.tile').data(tiles, d => d.id);
     }
 
     async animateTilesIn() {

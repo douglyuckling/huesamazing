@@ -105,12 +105,31 @@ class GameboardMouseInteraction {
     }
 
     onCompleteTileSelectionGesture(gesture) {
-        gesture.tile.x = gesture.originalPosition.x;
-        gesture.tile.y = gesture.originalPosition.y;
+        if (this.selectedTileGesture) {
+            const socketA = {
+                tile: this.selectedTileGesture.tile,
+                tileEl: this.selectedTileGesture.tileEl,
+                position: this.selectedTileGesture.originalPosition,
+            };
+            const socketB = {
+                tile: gesture.tile,
+                tileEl: gesture.tileEl,
+                position: gesture.originalPosition,
+            };
+            this.selectedTileGesture = null;
 
-        this.selectedTileGesture = gesture;
+            this.emitter.emit('completeTileSelectionBasedSwapGesture', socketA, socketB);
+        } else {
+            const socket = {
+                tile: gesture.tile,
+                tileEl: gesture.tileEl,
+                position: gesture.originalPosition,
+            };
 
-        this.emitter.emit('completeTileSelectionGesture', gesture);
+            this.selectedTileGesture = gesture;
+
+            this.emitter.emit('completeTileSelectionGesture', socket);
+        }
     }
 
 }
