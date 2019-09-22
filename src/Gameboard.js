@@ -61,6 +61,28 @@ class Gameboard {
             .end();
     }
 
+    async animateTilesOut() {
+        return this.getTilesSelection()
+            .call(updatingTile => {
+                updatingTile
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y)
+                    .attr('width', d => d.width)
+                    .attr('height', d => d.height);
+            })
+            .transition().duration(800).ease(d3.easeQuad)
+            .call(transitioningTile => {
+                transitioningTile
+                    .delay(d => d.row * 150 + d.col * 75)
+                    .attr('x', d => d.x + 0.5 * d.width)
+                    .attr('y', d => d.y + 0.5 * d.height)
+                    .attr('width', 0)
+                    .attr('height', 0);
+            })
+            .remove()
+            .end();
+    }
+
 }
 
 export default Gameboard;

@@ -24,6 +24,9 @@ gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
 function loopAnimation() {
     gameboard.animateTilesIn()
         .then(() => {
+            return gameboard.animateTilesOut();
+        })
+        .then(() => {
             loopAnimation();
         });
 }
