@@ -11,7 +11,8 @@ const level = new Level({
         'TL': '#6349e2', 'TR': '#ffe7e6',
         'BL': '#a10758', 'BR': '#e3c122'
     },
-    resolution: [7, 9]
+    resolution: [7, 9],
+    pinnedTiles: ['1,1', '5,1', '1,7', '5,7']
 });
 
 const gameboard = new Gameboard(document.body, level);

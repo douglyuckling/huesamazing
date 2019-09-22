@@ -4,3 +4,8 @@
 
     background-color: hsl(0, 0%, 0%);
 }
+
+.pin {
+    fill: hsl(0, 0%, 0%);
+    stroke: none;
+}

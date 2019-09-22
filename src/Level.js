@@ -7,6 +7,7 @@ class Level {
         const [nCols, nRows] = rawLevelData.resolution;
         this.nCols = nCols;
         this.nRows = nRows;
+        this.pinnedTileIds = new Set(rawLevelData.pinnedTiles);
         this.interpolateFn = d3.interpolateRgb;
     }
 
@@ -15,8 +16,9 @@ class Level {
         const tiles = new Array(this.nRows * this.nCols);
         for (let j = 0; j < this.nRows; j++) {
             for (let i = 0; i < this.nCols; i++) {
+                const tileId = `${i},${j}`;
                 tiles[j * this.nCols + i] = {
-                    id: `${i},${j}`,
+                    id: tileId,
                     col: i,
                     row: j,
                     color: d3.color(colors[j][i]),
@@ -24,6 +26,7 @@ class Level {
                     y: NaN,
                     width: NaN,
                     height: NaN,
+                    pinned: this.pinnedTileIds.has(tileId),
                 };
             }
         }

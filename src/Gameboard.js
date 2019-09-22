@@ -43,16 +43,30 @@ class Gameboard {
             .call(enteringTile => {
                 enteringTile
                     .attr('transform', d => `translate(${d.x}, ${d.y})`);
-                enteringTile.append('rect');
+
+                enteringTile.append('rect')
+                    .style('fill', d => d.color);
+
+                enteringTile.filter(d => d.pinned)
+                    .call(enteringPinnedTile => {
+                        enteringPinnedTile.select('rect')
+                            .attr('x', d => -0.5 * d.width)
+                            .attr('y', d => -0.5 * d.height)
+                            .attr('width', d => d.width)
+                            .attr('height', d => d.height);
+
+                        enteringPinnedTile.append('circle').attr('class', 'pin')
+                            .attr('r', 4);
+                    });
             })
             .merge(tile)
+            .filter(d => !d.pinned)
             .call(updatingTile => {
                 updatingTile.select('rect')
                     .attr('x', 0)
                     .attr('y', 0)
                     .attr('width', 0)
-                    .attr('height', 0)
-                    .style('fill', d => d.color);
+                    .attr('height', 0);
             })
             .transition().duration(500).delay(d => d.row * 100 + d.col * 50).ease(d3.easeQuad)
             .call(transitioningTile => {
@@ -73,6 +87,14 @@ class Gameboard {
                     .attr('y', d => -0.5 * d.height)
                     .attr('width', d => d.width)
                     .attr('height', d => d.height);
+
+                updatingTile.select('.pin')
+                    .style('fill-opacity', 1);
+            })
+            .transition().duration(350).ease(d3.easeCubicOut)
+            .call(transitioningTile => {
+                transitioningTile.select('.pin')
+                    .style('fill-opacity', 0);
             })
             .transition().duration(500).delay(d => d.row * 100 + d.col * 50).ease(d3.easeQuad)
             .call(transitioningTile => {
