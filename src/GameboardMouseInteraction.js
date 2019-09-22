@@ -8,6 +8,7 @@ class GameboardMouseInteraction {
         this.active = false;
         this.emitter = new Emitter();
         this.currentGesture = null;
+        this.selectedTileGesture = null;
         this.attachEventListeners(this.gameboard.rootEl);
     }
 
@@ -49,6 +50,13 @@ class GameboardMouseInteraction {
             tileEl: tileEl,
             originalPosition: {x: tile.x, y: tile.y},
             grabOffset: getEventCoordinatesRelativeToSvgElement(mouseDownEvent, tileEl),
+            dragThresholds: {
+                xMin: tile.x - (tile.width / 2),
+                xMax: tile.x + (tile.width / 2),
+                yMin: tile.y - (tile.height / 2),
+                yMax: tile.y + (tile.height / 2),
+            },
+            draggedOverOtherTiles: false,
             end: () => {
                 window.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
@@ -64,20 +72,45 @@ class GameboardMouseInteraction {
             tile.x = mouse.x - gesture.grabOffset.x;
             tile.y = mouse.y - gesture.grabOffset.y;
 
+            if (tile.x < gesture.dragThresholds.xMin || tile.x > gesture.dragThresholds.xMax ||
+                tile.y < gesture.dragThresholds.yMin || tile.y > gesture.dragThresholds.yMax) {
+                gesture.draggedOverOtherTiles = true;
+            }
+
             this.emitter.emit('updateTileGesture', gesture);
         };
         window.addEventListener('mousemove', onMouseMove);
 
         const onMouseUp = (mouseUpEvent) => {
             gesture.end();
-
-            this.emitter.emit('endTileGesture', gesture);
+            this.onCompleteGesture(gesture);
         };
         window.addEventListener('mouseup', onMouseUp);
 
         this.currentGesture = gesture;
 
         this.emitter.emit('beginTileGesture', gesture);
+    }
+
+    onCompleteGesture(gesture) {
+        if (gesture.draggedOverOtherTiles) {
+            this.onCompleteTileDragGesture(gesture);
+        } else {
+            this.onCompleteTileSelectionGesture(gesture);
+        }
+    }
+
+    onCompleteTileDragGesture(gesture) {
+        this.emitter.emit('completeTileDragGesture', gesture);
+    }
+
+    onCompleteTileSelectionGesture(gesture) {
+        gesture.tile.x = gesture.originalPosition.x;
+        gesture.tile.y = gesture.originalPosition.y;
+
+        this.selectedTileGesture = gesture;
+
+        this.emitter.emit('completeTileSelectionGesture', gesture);
     }
 
 }

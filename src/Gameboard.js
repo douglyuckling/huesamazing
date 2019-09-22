@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import GameboardMouseInteraction from './GameboardMouseInteraction';
 import './gameboard.css';
 
-const selectedTileScalingFactor = 1.2;
+const activeTileScalingFactor = 1.2;
 
 class Gameboard {
 
@@ -49,13 +49,14 @@ class Gameboard {
     attachEventListeners() {
         this.mouseInteraction.emitter.on('beginTileGesture', (...args) => this.onBeginTileGesture(...args));
         this.mouseInteraction.emitter.on('updateTileGesture', (...args) => this.onUpdateTileGesture(...args));
-        this.mouseInteraction.emitter.on('endTileGesture', (...args) => this.onEndTileGesture(...args));
+        this.mouseInteraction.emitter.on('completeTileDragGesture', (...args) => this.onCompleteTileDragGesture(...args));
+        this.mouseInteraction.emitter.on('completeTileSelectionGesture', (...args) => this.onCompleteTileSelectionGesture(...args));
     }
 
     onBeginTileGesture(gesture) {
         Object.assign(gesture.tile, {
-            width: this.tileWidth * selectedTileScalingFactor,
-            height: this.tileHeight * selectedTileScalingFactor,
+            width: this.tileWidth * activeTileScalingFactor,
+            height: this.tileHeight * activeTileScalingFactor,
         });
 
         d3.select(gesture.tileEl).datum(gesture.tile)
@@ -73,7 +74,7 @@ class Gameboard {
             .attr('transform', d => `translate(${d.x}, ${d.y})`);
     }
 
-    onEndTileGesture(gesture) {
+    onCompleteTileDragGesture(gesture) {
         Object.assign(gesture.tile, {
             width: this.tileWidth,
             height: this.tileHeight,
@@ -87,6 +88,12 @@ class Gameboard {
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
             });
+    }
+
+    onCompleteTileSelectionGesture(gesture) {
+        d3.select(gesture.tileEl).datum(gesture.tile)
+            .transition().duration(100)
+            .attr('transform', d => `translate(${d.x}, ${d.y})`);
     }
 
     getTilesSelection() {
