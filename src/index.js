@@ -19,4 +19,13 @@ const gameboard = new Gameboard(document.body, level);
 const nominalBoardHeight = 960;
 const nominalBoardWidth = Math.floor(nominalBoardHeight * 0.618);
 
-gameboard.resize(nominalBoardWidth, nominalBoardHeight);
+gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+
+function loopAnimation() {
+    gameboard.animateTilesIn()
+        .then(() => {
+            loopAnimation();
+        });
+}
+
+loopAnimation();

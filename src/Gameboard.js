@@ -9,7 +9,7 @@ class Gameboard {
         this.tiles = this.level.createTiles();
     }
 
-    resize(nominalBoardWidth, nominalBoardHeight) {
+    setNominalBoardSize(nominalBoardWidth, nominalBoardHeight) {
         const nCols = this.level.nCols;
         const nRows = this.level.nRows;
 
@@ -28,20 +28,37 @@ class Gameboard {
             tile.width = tileWidth;
             tile.height = tileHeight;
         }
-
-        this.render();
     }
 
-    render() {
-        const rect = this.rootSelection.selectAll('rect').data(this.tiles, d => d.id);
-        rect.exit().remove();
-        rect.enter().append('rect')
-            .merge(rect)
-            .attr('x', d => d.x)
-            .attr('y', d => d.y)
-            .attr('width', d => d.width)
-            .attr('height', d => d.height)
-            .style('fill', d => d.color);
+    getTilesSelection() {
+        return this.rootSelection.selectAll('rect').data(this.tiles, d => d.id);
+    }
+
+    async animateTilesIn() {
+        const tile = this.getTilesSelection();
+
+        tile.exit().remove();
+
+        return tile.enter().append('rect')
+            .merge(tile)
+            .call(updatingTile => {
+                updatingTile
+                    .attr('x', d => d.x + 0.5 * d.width)
+                    .attr('y', d => d.y + 0.5 * d.height)
+                    .attr('width', 0)
+                    .attr('height', 0)
+                    .style('fill', d => d.color);
+            })
+            .transition().duration(800).ease(d3.easeQuad)
+            .call(transitioningTile => {
+                transitioningTile
+                    .delay(d => d.row * 150 + d.col * 75)
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y)
+                    .attr('width', d => d.width)
+                    .attr('height', d => d.height);
+            })
+            .end();
     }
 
 }
