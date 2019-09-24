@@ -12,7 +12,7 @@ class Gameboard {
         this.level = level;
         this.sockets = this.level.createSockets();
         this.tiles = this.sockets.map(socket => socket.tile);
-        this.numberOfMoves = 0;
+        this.numberOfMoves = NaN;
         this.mouseInteraction = new GameboardMouseInteraction(this);
         this.attachEventListeners();
     }
@@ -60,6 +60,7 @@ class Gameboard {
     }
 
     async start() {
+        this.numberOfMoves = 0;
         this.renderTilesHidden(this.level.showTargetStateBeforeRandomizing);
         if (this.level.showTargetStateBeforeRandomizing) {
             await this.animateOutUnpinnedTilesBeforeRandomizing();
@@ -120,6 +121,7 @@ class Gameboard {
                 this.applyTileDimensions(updatingTileSelection);
             });
         this.incrementNumberOfMoves();
+        this.checkForWin();
     }
 
     onAbortTileDragBasedSwapGesture(originalSocket, draggedOverOtherTiles) {
@@ -158,6 +160,7 @@ class Gameboard {
             });
 
         this.incrementNumberOfMoves();
+        this.checkForWin();
     }
 
     onAbortTileSelectionBasedSwapGesture(originalSocket) {
@@ -240,8 +243,9 @@ class Gameboard {
     async animateOutUnpinnedTilesBeforeRandomizing() {
         const tile = this.getTilesSelection().filter(d => !d.pinned);
 
+        await sleep(1000);
+
         await tile
-            .transition().duration(0).delay(1000) //pause
             .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
             .call(transitioningTile => {
                 transitioningTile.select('rect')
@@ -269,7 +273,7 @@ class Gameboard {
             .end();
     }
 
-    async animateTilesOut() {
+    async animateTilesOutAfterWin() {
         return this.getTilesSelection()
             .call(updatingTile => {
                 this.applyTileDimensions(updatingTile);
@@ -306,6 +310,28 @@ class Gameboard {
         this.numberOfMoves += 1;
     }
 
+    checkForWin() {
+        const win = this.sockets.every(socket => socket.tile.id === socket.id);
+        if (win) {
+            this.onWin();
+        }
+    }
+
+    async onWin() {
+        this.mouseInteraction.deactivate();
+
+        console.log(`You won in ${this.numberOfMoves} ${this.numberOfMoves === 1 ? 'move' : 'moves'}!`);
+        await sleep(1000);
+        await this.animateTilesOutAfterWin();
+        await this.start();
+    }
+
+}
+
+async function sleep(durationInMillis) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => resolve(), durationInMillis);
+    });
 }
 
 export default Gameboard;

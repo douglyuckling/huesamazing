@@ -16,6 +16,10 @@ class GameboardMouseInteraction {
         this.active = true;
     }
 
+    deactivate() {
+        this.active = false;
+    }
+
     attachEventListeners(delegateEl) {
         delegateEl.addEventListener('mousedown', event => this.onMouseDown(delegateEl, event));
     }
