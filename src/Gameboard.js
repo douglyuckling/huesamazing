@@ -59,11 +59,14 @@ class Gameboard {
         });
     }
 
-    start() {
-        this.animateTilesIn()
-            .then(() => {
-                this.mouseInteraction.activate();
-            });
+    async start() {
+        this.renderTilesHidden(this.level.showTargetStateBeforeRandomizing);
+        if (this.level.showTargetStateBeforeRandomizing) {
+            await this.animateOutUnpinnedTilesBeforeRandomizing();
+        }
+        this.randomizeTiles();
+        await this.animateInUnpinnedTilesAfterRandomizing();
+        this.mouseInteraction.activate();
     }
 
     attachEventListeners() {
@@ -105,10 +108,7 @@ class Gameboard {
     }
 
     onCompleteTileDragBasedSwapGesture(socketA, socketB) {
-        const tempTile = socketA.tile;
-        socketA.tile = socketB.tile;
-        socketB.tile = tempTile;
-
+        this.swapTiles(socketA, socketB);
         Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
         Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
 
@@ -146,10 +146,7 @@ class Gameboard {
     }
 
     onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
-        const tempTile = socketA.tile;
-        socketA.tile = socketB.tile;
-        socketB.tile = tempTile;
-
+        this.swapTiles(socketA, socketB);
         Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
         Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
 
@@ -174,39 +171,95 @@ class Gameboard {
             });
     }
 
+    swapTiles(socketA, socketB) {
+        const tempTile = socketA.tile;
+        socketA.tile = socketB.tile;
+        socketB.tile = tempTile;
+    }
+
+    randomizeTiles() {
+        const unpinnedSockets = this.sockets.filter(socket => !socket.pinned);
+
+        for (let i = 0; i < unpinnedSockets.length - 1; i++) {
+            const socketA = unpinnedSockets[i];
+            const otherSocketIndex = Math.floor(d3.randomUniform(i + 1, unpinnedSockets.length)());
+            const socketB = unpinnedSockets[otherSocketIndex];
+            this.swapTiles(socketA, socketB);
+            Object.assign(socketA.tile, socketA.position);
+            Object.assign(socketB.tile, socketB.position);
+        }
+    }
+
     getTilesSelection(tiles = this.tiles) {
         return this.rootSelection.selectAll('g.tile').data(tiles, d => d.id);
     }
 
-    async animateTilesIn() {
+    renderTilesHidden(showUnpinned) {
         const tile = this.getTilesSelection();
 
         tile.exit().remove();
 
-        return tile.enter().append('g').attr('class', 'tile')
+        tile.enter().append('g').attr('class', 'tile')
             .call(enteringTile => {
-                enteringTile
-                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
                 enteringTile.append('rect')
                     .style('fill', d => d.color);
 
                 enteringTile.filter(d => d.pinned)
                     .call(enteringPinnedTile => {
-                        this.applyTileDimensions(enteringPinnedTile);
-
                         enteringPinnedTile.append('circle').attr('class', 'pin')
-                            .attr('r', 4);
+                            .attr('r', 4)
+                            .style('fill-opacity', 1);
                     });
             })
             .merge(tile)
-            .filter(d => !d.pinned)
             .call(updatingTile => {
-                updatingTile.select('rect')
+                updatingTile
+                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+                updatingTile.filter(d => d.pinned)
+                    .call(updatingPinnedTile => {
+                        this.applyTileDimensions(updatingPinnedTile);
+                    });
+
+                updatingTile.filter(d => !d.pinned)
+                    .call(updatingUnpinnedTile => {
+                        if (showUnpinned) {
+                            this.applyTileDimensions(updatingUnpinnedTile);
+                        } else {
+                            updatingUnpinnedTile.select('rect')
+                                .attr('x', 0)
+                                .attr('y', 0)
+                                .attr('width', 0)
+                                .attr('height', 0);
+                        }
+                    });
+
+            });
+    }
+
+    async animateOutUnpinnedTilesBeforeRandomizing() {
+        const tile = this.getTilesSelection().filter(d => !d.pinned);
+
+        await tile
+            .transition().duration(0).delay(1000) //pause
+            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
+            .call(transitioningTile => {
+                transitioningTile.select('rect')
                     .attr('x', 0)
                     .attr('y', 0)
                     .attr('width', 0)
                     .attr('height', 0);
+            })
+            .end();
+    }
+
+    async animateInUnpinnedTilesAfterRandomizing() {
+        const tile = this.getTilesSelection().filter(d => !d.pinned);
+
+        await tile
+            .call(updatingTile => {
+                updatingTile
+                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
             })
             .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
             .call(transitioningTile => {

@@ -8,6 +8,7 @@ class Level {
         this.nCols = nCols;
         this.nRows = nRows;
         this.pinnedTileIds = new Set(rawLevelData.pinnedTiles);
+        this.showTargetStateBeforeRandomizing = rawLevelData.showTargetStateBeforeRandomizing;
         this.interpolateFn = d3.interpolateRgb;
     }
 
