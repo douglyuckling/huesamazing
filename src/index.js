@@ -1,7 +1,7 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
-import Gameboard from './Gameboard';
+import Gameboard from './gameboard/Gameboard';
 import Level from './Level';
 import './index.css';
 
