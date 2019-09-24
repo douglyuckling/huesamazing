@@ -106,7 +106,7 @@ class GameboardMouseInteraction {
     }
 
     onCompleteTileDragGesture(gesture) {
-        const targetSocket = this.gameboard.getSocketAtPosition(gesture.tile.x, gesture.tile.y);
+        const targetSocket = this.gameboard.getSocketAtPosition({x: gesture.tile.x, y: gesture.tile.y});
         if (targetSocket && targetSocket !== gesture.originalSocket && !targetSocket.pinned) {
             this.emitter.emit('completeTileDragBasedSwapGesture', gesture.originalSocket, targetSocket);
         } else {

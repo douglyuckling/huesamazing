@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import GameboardMouseInteraction from './GameboardMouseInteraction';
+import Socket from './Socket';
 import './gameboard.css';
 
 const activeTileScalingFactor = 1.2;
@@ -10,7 +11,7 @@ class Gameboard {
         this.rootSelection = d3.select(containerEl).append('svg').attr('class', 'gameboard');
         this.rootEl = this.rootSelection.node();
         this.level = level;
-        this.sockets = this.level.createSockets();
+        this.sockets = this.level.getTileData().map(d => new Socket(d));
         this.tiles = this.sockets.map(socket => socket.tile);
         this.numberOfMoves = NaN;
         this.mouseInteraction = new GameboardMouseInteraction(this);
@@ -30,25 +31,6 @@ class Gameboard {
             .attr('width', boardWidth)
             .attr('height', boardHeight);
 
-        for (const socket of this.sockets) {
-            Object.assign(socket.position, {
-                x: (socket.col + 0.5) * tileWidth,
-                y: (socket.row + 0.5) * tileHeight,
-            });
-            Object.assign(socket.dimensions, {
-                width: tileWidth,
-                height: tileHeight,
-            });
-            Object.assign(socket.bounds, {
-                xMin: socket.position.x - socket.dimensions.width / 2,
-                xMax: socket.position.x + socket.dimensions.width / 2,
-                yMin: socket.position.y - socket.dimensions.height / 2,
-                yMax: socket.position.y + socket.dimensions.height / 2,
-            });
-
-            Object.assign(socket.tile, socket.position, socket.dimensions);
-        }
-
         this.defaultTileDimensions = Object.freeze({
             width: tileWidth,
             height: tileHeight,
@@ -57,6 +39,12 @@ class Gameboard {
             width: tileWidth * activeTileScalingFactor,
             height: tileHeight * activeTileScalingFactor,
         });
+
+        for (const socket of this.sockets) {
+            socket.setBoardTileDimensions(this.defaultTileDimensions);
+
+            Object.assign(socket.tile, socket.position, socket.dimensions);
+        }
     }
 
     async start() {
@@ -80,12 +68,8 @@ class Gameboard {
         this.mouseInteraction.emitter.on('abortTileSelectionBasedSwapGesture', (...args) => this.onAbortTileSelectionBasedSwapGesture(...args));
     }
 
-    getSocketAtPosition(x, y) {
-        return this.sockets.find(socket => {
-            return (
-                x >= socket.bounds.xMin && x <= socket.bounds.xMax &&
-                y >= socket.bounds.yMin && y <= socket.bounds.yMax);
-        });
+    getSocketAtPosition(position) {
+        return this.sockets.find(socket => socket.containsPoint(position));
     }
 
     getSocketHoldingTile(tile) {
@@ -109,7 +93,7 @@ class Gameboard {
     }
 
     onCompleteTileDragBasedSwapGesture(socketA, socketB) {
-        this.swapTiles(socketA, socketB);
+        socketA.swapTilesWith(socketB);
         Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
         Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
 
@@ -148,7 +132,7 @@ class Gameboard {
     }
 
     onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
-        this.swapTiles(socketA, socketB);
+        socketA.swapTilesWith(socketB);
         Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
         Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
 
@@ -174,12 +158,6 @@ class Gameboard {
             });
     }
 
-    swapTiles(socketA, socketB) {
-        const tempTile = socketA.tile;
-        socketA.tile = socketB.tile;
-        socketB.tile = tempTile;
-    }
-
     randomizeTiles() {
         const unpinnedSockets = this.sockets.filter(socket => !socket.pinned);
 
@@ -187,7 +165,7 @@ class Gameboard {
             const socketA = unpinnedSockets[i];
             const otherSocketIndex = Math.floor(d3.randomUniform(i + 1, unpinnedSockets.length)());
             const socketB = unpinnedSockets[otherSocketIndex];
-            this.swapTiles(socketA, socketB);
+            socketA.swapTilesWith(socketB);
             Object.assign(socketA.tile, socketA.position);
             Object.assign(socketB.tile, socketB.position);
         }
