@@ -29,8 +29,6 @@ class Level {
                 sockets[j * this.nCols + i] = socket;
                 socket.tile = {
                     id: id,
-                    col: i,
-                    row: j,
                     color: d3.color(colors[j][i]),
                     pinned: socket.pinned,
                     x: NaN,

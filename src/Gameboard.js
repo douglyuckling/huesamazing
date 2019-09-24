@@ -208,7 +208,7 @@ class Gameboard {
                     .attr('width', 0)
                     .attr('height', 0);
             })
-            .transition().duration(500).delay(d => d.row * 100 + d.col * 50).ease(d3.easeQuad)
+            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
             .call(transitioningTile => {
                 this.applyTileDimensions(transitioningTile);
                 transitioningTile.select('rect');
@@ -229,7 +229,7 @@ class Gameboard {
                 transitioningTile.select('.pin')
                     .style('fill-opacity', 0);
             })
-            .transition().duration(500).delay(d => d.row * 100 + d.col * 50).ease(d3.easeQuad)
+            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
             .call(transitioningTile => {
                 transitioningTile.select('rect')
                     .attr('x', 0)
