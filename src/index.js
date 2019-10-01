@@ -1,5 +1,6 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
+import "./polyfills.js";
 
 import Gameboard from './gameboard/Gameboard';
 import Level from './Level';
