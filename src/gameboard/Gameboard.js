@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import GameboardMouseInteraction from './GameboardMouseInteraction';
+import GameboardInteraction from './GameboardInteraction';
 import Socket from './Socket';
 import './gameboard.css';
 
@@ -14,7 +14,7 @@ class Gameboard {
         this.sockets = this.level.getTileData().map(d => new Socket(d));
         this.tiles = this.sockets.map(socket => socket.tile);
         this.numberOfMoves = NaN;
-        this.mouseInteraction = new GameboardMouseInteraction(this);
+        this.interaction = new GameboardInteraction(this);
         this.attachEventListeners();
     }
 
@@ -55,17 +55,18 @@ class Gameboard {
         }
         this.randomizeTiles();
         await this.animateInUnpinnedTilesAfterRandomizing();
-        this.mouseInteraction.activate();
+        this.interaction.activate();
     }
 
     attachEventListeners() {
-        this.mouseInteraction.emitter.on('beginTileGesture', (...args) => this.onBeginTileGesture(...args));
-        this.mouseInteraction.emitter.on('updateTileGesture', (...args) => this.onUpdateTileGesture(...args));
-        this.mouseInteraction.emitter.on('completeTileDragBasedSwapGesture', (...args) => this.onCompleteTileDragBasedSwapGesture(...args));
-        this.mouseInteraction.emitter.on('abortTileDragBasedSwapGesture', (...args) => this.onAbortTileDragBasedSwapGesture(...args));
-        this.mouseInteraction.emitter.on('completeTileSelectionGesture', (...args) => this.onCompleteTileSelectionGesture(...args));
-        this.mouseInteraction.emitter.on('completeTileSelectionBasedSwapGesture', (...args) => this.onCompleteTileSelectionBasedSwapGesture(...args));
-        this.mouseInteraction.emitter.on('abortTileSelectionBasedSwapGesture', (...args) => this.onAbortTileSelectionBasedSwapGesture(...args));
+        this.interaction.emitter.on('beginTileGesture', (...args) => this.onBeginTileGesture(...args));
+        this.interaction.emitter.on('updateTileGesture', (...args) => this.onUpdateTileGesture(...args));
+        this.interaction.emitter.on('completeTileDragBasedSwapGesture', (...args) => this.onCompleteTileDragBasedSwapGesture(...args));
+        this.interaction.emitter.on('abortTileDragBasedSwapGesture', (...args) => this.onAbortTileDragBasedSwapGesture(...args));
+        this.interaction.emitter.on('completeTileSelectionGesture', (...args) => this.onCompleteTileSelectionGesture(...args));
+        this.interaction.emitter.on('abortTileSelectionGesture', (...args) => this.onAbortTileSelectionGesture(...args));
+        this.interaction.emitter.on('completeTileSelectionBasedSwapGesture', (...args) => this.onCompleteTileSelectionBasedSwapGesture(...args));
+        this.interaction.emitter.on('abortTileSelectionBasedSwapGesture', (...args) => this.onAbortTileSelectionBasedSwapGesture(...args));
     }
 
     getSocketAtPosition(position) {
@@ -125,6 +126,14 @@ class Gameboard {
 
     onCompleteTileSelectionGesture(socket) {
         Object.assign(socket.tile, socket.position);
+
+        this.getTilesSelection([socket.tile])
+            .transition().duration(100)
+            .attr('transform', d => `translate(${d.x}, ${d.y})`);
+    }
+
+    onAbortTileSelectionGesture(socket) {
+        Object.assign(socket.tile, socket.position, this.defaultTileDimensions);
 
         this.getTilesSelection([socket.tile])
             .transition().duration(100)
@@ -296,7 +305,7 @@ class Gameboard {
     }
 
     async onWin() {
-        this.mouseInteraction.deactivate();
+        this.interaction.deactivate();
 
         console.log(`You won in ${this.numberOfMoves} ${this.numberOfMoves === 1 ? 'move' : 'moves'}!`);
         await sleep(1000);
