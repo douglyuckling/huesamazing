@@ -18,8 +18,20 @@ const level = new Level({
 
 const gameboard = new Gameboard(document.body, level);
 
-const nominalBoardHeight = 960;
-const nominalBoardWidth = Math.floor(nominalBoardHeight * 0.618);
+const contentAspectRatio = 0.618;
+const windowAspectRatio = window.innerWidth / window.innerHeight;
+
+let nominalBoardHeight = NaN;
+let nominalBoardWidth = NaN;
+if (windowAspectRatio > contentAspectRatio) {
+    // Height is limiting factor; sides will be letterboxed
+    nominalBoardHeight = window.innerHeight;
+    nominalBoardWidth = nominalBoardHeight * contentAspectRatio;
+} else {
+    // Width is limiting factor; bottom will be letterboxed
+    nominalBoardWidth = window.innerWidth;
+    nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
+}
 
 gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
 
