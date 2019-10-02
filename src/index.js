@@ -3,21 +3,8 @@ import "regenerator-runtime/runtime";
 import "./polyfills.js";
 
 import Gameboard from './gameboard/Gameboard';
-import Level from './Level';
+import levels from './levels';
 import './index.css';
-
-const level = new Level({
-    type: 'rectangles',
-    anchorColors: {
-        'TL': '#6349e2', 'TR': '#ffe7e6',
-        'BL': '#a10758', 'BR': '#e3c122'
-    },
-    resolution: [5, 7],
-    pinnedTiles: ['1,1', '3,1', '1,5', '3,5'],
-    showTargetStateBeforeRandomizing: true
-});
-
-const gameboard = new Gameboard(document.body, level);
 
 const contentAspectRatio = 0.618;
 const windowAspectRatio = window.innerWidth / window.innerHeight;
@@ -34,6 +21,21 @@ if (windowAspectRatio > contentAspectRatio) {
     nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
 }
 
-gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+async function playLevel(level) {
+    const gameboard = new Gameboard(document.body, level);
+    gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+    const results = await gameboard.play();
+    if (results.complete) {
+        console.log(`You won in ${results.numberOfMoves} ${results.numberOfMoves === 1 ? 'move' : 'moves'}!`);
+    }
+}
 
-gameboard.start();
+async function loopThroughAllLevels() {
+    let i = 0;
+    while (i < levels.length) {
+        await playLevel(levels[i]);
+        i = (i + 1) % levels.length;
+    }
+}
+
+Promise.resolve().then(loopThroughAllLevels);

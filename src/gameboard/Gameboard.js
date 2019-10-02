@@ -16,6 +16,8 @@ class Gameboard {
         this.numberOfMoves = NaN;
         this.interaction = new GameboardInteraction(this);
         this.attachEventListeners();
+
+        this.resolvePlayPromise = null;
     }
 
     setNominalBoardSize(nominalBoardWidth, nominalBoardHeight) {
@@ -47,7 +49,11 @@ class Gameboard {
         }
     }
 
-    async start() {
+    async play() {
+        if (this.resolvePlayPromise) {
+            throw Error("Illegal state: play() has already been invoked on this Gameboard");
+        }
+
         this.numberOfMoves = 0;
         this.renderTilesHidden(this.level.showTargetStateBeforeRandomizing);
         if (this.level.showTargetStateBeforeRandomizing) {
@@ -56,6 +62,14 @@ class Gameboard {
         this.randomizeTiles();
         await this.animateInUnpinnedTilesAfterRandomizing();
         this.interaction.activate();
+
+        const results = await new Promise((resolve) => {
+            this.resolvePlayPromise = resolve;
+        });
+
+        this.rootSelection.remove();
+
+        return results;
     }
 
     attachEventListeners() {
@@ -307,10 +321,9 @@ class Gameboard {
     async onWin() {
         this.interaction.deactivate();
 
-        console.log(`You won in ${this.numberOfMoves} ${this.numberOfMoves === 1 ? 'move' : 'moves'}!`);
         await sleep(1000);
         await this.animateTilesOutAfterWin();
-        await this.start();
+        this.resolvePlayPromise({complete: true, numberOfMoves: this.numberOfMoves});
     }
 
 }
