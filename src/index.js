@@ -21,21 +21,32 @@ if (windowAspectRatio > contentAspectRatio) {
     nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
 }
 
+let currentGameboard = null;
+
 async function playLevel(level) {
-    const gameboard = new Gameboard(document.body, level);
-    gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
-    const results = await gameboard.play();
+    currentGameboard = new Gameboard(document.body, level);
+    currentGameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+    const results = await currentGameboard.play();
     if (results.complete) {
         console.log(`You won in ${results.numberOfMoves} ${results.numberOfMoves === 1 ? 'move' : 'moves'}!`);
     }
 }
 
+let levelIndex = 0;
+
 async function loopThroughAllLevels() {
-    let i = 0;
-    while (i < levels.length) {
-        await playLevel(levels[i]);
-        i = (i + 1) % levels.length;
+    while (levelIndex < levels.length) {
+        const level = levels[levelIndex];
+        levelIndex = (levelIndex + 1) % levels.length;
+        await playLevel(level);
     }
 }
 
 Promise.resolve().then(loopThroughAllLevels);
+
+window.goToLevel = function(newLevelIndex) {
+    levelIndex = newLevelIndex;
+    if (currentGameboard) {
+        currentGameboard.abort();
+    }
+};

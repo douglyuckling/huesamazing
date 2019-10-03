@@ -326,6 +326,12 @@ class Gameboard {
         this.resolvePlayPromise({complete: true, numberOfMoves: this.numberOfMoves});
     }
 
+    async abort() {
+        this.interaction.deactivate();
+
+        this.resolvePlayPromise({complete: false, numberOfMoves: this.numberOfMoves});
+    }
+
 }
 
 async function sleep(durationInMillis) {
