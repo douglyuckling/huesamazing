@@ -6,7 +6,7 @@ import Gameboard from './gameboard/Gameboard';
 import levels from './levels';
 import './index.css';
 
-const contentAspectRatio = 0.618;
+const contentAspectRatio = 0.644;
 const windowAspectRatio = window.innerWidth / window.innerHeight;
 
 let nominalBoardHeight = NaN;
