@@ -35,7 +35,7 @@ async function playLevel(level) {
     }
 }
 
-let levelIndex = 0;
+let levelIndex = 10;
 
 async function loopThroughAllLevels() {
     while (levelIndex < levels.length) {
