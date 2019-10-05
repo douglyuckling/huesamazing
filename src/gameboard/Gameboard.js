@@ -40,13 +40,9 @@ class Gameboard {
             width: tileWidth,
             height: tileHeight,
         });
-        this.selectedTileDimensions = Object.freeze({
-            width: tileWidth * activeTileScalingFactor,
-            height: tileHeight * activeTileScalingFactor,
-        });
 
         for (const socket of this.sockets) {
-            Object.assign(socket.tile, socket.position, socket.dimensions);
+            Object.assign(socket.tile, socket.position);
         }
     }
 
@@ -93,7 +89,7 @@ class Gameboard {
     }
 
     onBeginTileGesture(gesture) {
-        Object.assign(gesture.tile, this.selectedTileDimensions);
+        Object.assign(gesture.tile, {scale: activeTileScalingFactor});
 
         this.getTilesSelection([gesture.tile])
             .raise()
@@ -110,8 +106,8 @@ class Gameboard {
 
     onCompleteTileDragBasedSwapGesture(socketA, socketB) {
         socketA.swapTilesWith(socketB);
-        Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
-        Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
+        Object.assign(socketA.tile, socketA.position, {scale: 1});
+        Object.assign(socketB.tile, socketB.position, {scale: 1});
 
         this.getTilesSelection([socketA.tile, socketB.tile])
             .raise()
@@ -125,7 +121,7 @@ class Gameboard {
     }
 
     onAbortTileDragBasedSwapGesture(originalSocket, draggedOverOtherTiles) {
-        Object.assign(originalSocket.tile, originalSocket.position, this.defaultTileDimensions);
+        Object.assign(originalSocket.tile, originalSocket.position, {scale: 1});
 
         this.getTilesSelection([originalSocket.tile])
             .transition()
@@ -148,7 +144,7 @@ class Gameboard {
     }
 
     onAbortTileSelectionGesture(socket) {
-        Object.assign(socket.tile, socket.position, this.defaultTileDimensions);
+        Object.assign(socket.tile, socket.position, {scale: 1});
 
         this.getTilesSelection([socket.tile])
             .transition().duration(100)
@@ -157,8 +153,8 @@ class Gameboard {
 
     onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
         socketA.swapTilesWith(socketB);
-        Object.assign(socketA.tile, socketA.position, this.defaultTileDimensions);
-        Object.assign(socketB.tile, socketB.position, this.defaultTileDimensions);
+        Object.assign(socketA.tile, socketA.position, {scale: 1});
+        Object.assign(socketB.tile, socketB.position, {scale: 1});
 
         this.getTilesSelection([socketA.tile, socketB.tile])
             .transition().duration(500)
@@ -172,7 +168,7 @@ class Gameboard {
     }
 
     onAbortTileSelectionBasedSwapGesture(originalSocket) {
-        Object.assign(originalSocket.tile, originalSocket.position, this.defaultTileDimensions);
+        Object.assign(originalSocket.tile, originalSocket.position, {scale: 1});
 
         this.getTilesSelection([originalSocket.tile])
             .transition()

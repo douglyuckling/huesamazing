@@ -1,6 +1,7 @@
 class Tile {
 
-    constructor({id, color, pinned}) {
+    constructor(gameboard, {id, color, pinned}) {
+        this.gameboard = gameboard;
         this.id = id;
         this.color = color;
         this.pinned = pinned;
@@ -9,8 +10,7 @@ class Tile {
         this._mutableFields = {
             x: NaN,
             y: NaN,
-            width: NaN,
-            height: NaN,
+            scale: 1
         };
 
         Object.freeze(this);
@@ -32,20 +32,20 @@ class Tile {
         this._mutableFields.y = y;
     }
 
-    get width() {
-        return this._mutableFields.width;
+    get scale() {
+        return this._mutableFields.scale;
     }
 
-    set width(width) {
-        this._mutableFields.width = width;
+    set scale(scale) {
+        this._mutableFields.scale = scale;
+    }
+
+    get width() {
+        return this._mutableFields.scale * this.gameboard.defaultTileDimensions.width;
     }
 
     get height() {
-        return this._mutableFields.height;
-    }
-
-    set height(height) {
-        this._mutableFields.height = height;
+        return this._mutableFields.scale * this.gameboard.defaultTileDimensions.height;
     }
 
 }

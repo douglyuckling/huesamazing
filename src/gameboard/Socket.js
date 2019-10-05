@@ -11,7 +11,7 @@ class Socket {
 
         /** @private */
         this._mutableFields = {
-            tile: new Tile({id, color, pinned}),
+            tile: new Tile(gameboard, {id, color, pinned}),
         };
 
         Object.freeze(this);
