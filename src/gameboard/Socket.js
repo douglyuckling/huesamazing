@@ -2,7 +2,8 @@ import Tile from './Tile';
 
 class Socket {
 
-    constructor({id, col, row, color, pinned}) {
+    constructor(gameboard, {id, col, row, color, pinned}) {
+        this.gameboard = gameboard;
         this.id = id;
         this.col = col;
         this.row = row;
@@ -10,9 +11,6 @@ class Socket {
 
         /** @private */
         this._mutableFields = {
-            position: {x: NaN, y: NaN},
-            dimensions: {width: NaN, height: NaN},
-            bounds: {xMin: NaN, xMax: NaN, yMin: NaN, yMax: NaN},
             tile: new Tile({id, color, pinned}),
         };
 
@@ -20,33 +18,32 @@ class Socket {
     }
 
     get position() {
-        return Object.freeze(Object.assign({}, this._mutableFields.position));
+        return {
+            x: (this.col + 0.5) * this.gameboard.defaultTileDimensions.width,
+            y: (this.row + 0.5) * this.gameboard.defaultTileDimensions.height
+        };
     }
 
     get dimensions() {
-        return Object.freeze(Object.assign({}, this._mutableFields.dimensions));
+        return {
+            width: this.gameboard.defaultTileDimensions.width,
+            height: this.gameboard.defaultTileDimensions.height
+        };
     }
 
     get bounds() {
-        return Object.freeze(Object.assign({}, this._mutableFields.bounds));
-    }
-
-    get tile() {
-        return this._mutableFields.tile;
-    }
-
-    setBoardTileDimensions({width, height}) {
-        const x = (this.col + 0.5) * width;
-        const y = (this.row + 0.5) * height;
-
-        Object.assign(this._mutableFields.position, {x, y});
-        Object.assign(this._mutableFields.dimensions, {width, height});
-        Object.assign(this._mutableFields.bounds, {
+        const {x, y} = this.position;
+        const {width, height} = this.dimensions;
+        return {
             xMin: x - width / 2,
             xMax: x + width / 2,
             yMin: y - height / 2,
             yMax: y + height / 2,
-        });
+        };
+    }
+
+    get tile() {
+        return this._mutableFields.tile;
     }
 
     swapTilesWith(otherSocket) {

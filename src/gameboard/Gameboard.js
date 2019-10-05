@@ -14,7 +14,7 @@ class Gameboard {
         this.rootSelection = select(containerEl).append('svg').attr('class', 'gameboard');
         this.rootEl = this.rootSelection.node();
         this.level = level;
-        this.sockets = this.level.getTileData().map(d => new Socket(d));
+        this.sockets = this.level.getTileData().map(d => new Socket(this, d));
         this.tiles = this.sockets.map(socket => socket.tile);
         this.numberOfMoves = NaN;
         this.interaction = new GameboardInteraction(this);
@@ -46,8 +46,6 @@ class Gameboard {
         });
 
         for (const socket of this.sockets) {
-            socket.setBoardTileDimensions(this.defaultTileDimensions);
-
             Object.assign(socket.tile, socket.position, socket.dimensions);
         }
     }
