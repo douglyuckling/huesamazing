@@ -26,6 +26,9 @@ let currentGameboard = null;
 async function playLevel(level) {
     currentGameboard = new Gameboard(document.body, level);
     currentGameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+    const marginTop = (window.innerHeight - currentGameboard.rootEl.clientHeight) / 2;
+    currentGameboard.rootSelection.style('margin-top', marginTop);
+
     const results = await currentGameboard.play();
     if (results.complete) {
         console.log(`You won in ${results.numberOfMoves} ${results.numberOfMoves === 1 ? 'move' : 'moves'}!`);
