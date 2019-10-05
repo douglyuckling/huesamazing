@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "webpack-dev-server --host 0.0.0.0",
-    "build": "webpack",
+    "build": "webpack --config webpack.prod.config.js",
     "deploy": "s3-deploy './dist/**' --cwd './dist/' --region us-east-2 --bucket huesamazing --private"
   },
   "devDependencies": {
