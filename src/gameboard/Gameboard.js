@@ -1,4 +1,7 @@
-import * as d3 from 'd3';
+import {easeCubicOut, easeQuad} from 'd3-ease';
+import {randomUniform} from 'd3-random';
+import {select} from 'd3-selection';
+import 'd3-transition';
 import GameboardInteraction from './GameboardInteraction';
 import Socket from './Socket';
 import './gameboard.css';
@@ -8,7 +11,7 @@ const activeTileScalingFactor = 1.2;
 class Gameboard {
 
     constructor(containerEl, level) {
-        this.rootSelection = d3.select(containerEl).append('svg').attr('class', 'gameboard');
+        this.rootSelection = select(containerEl).append('svg').attr('class', 'gameboard');
         this.rootEl = this.rootSelection.node();
         this.level = level;
         this.sockets = this.level.getTileData().map(d => new Socket(d));
@@ -186,7 +189,7 @@ class Gameboard {
 
         for (let i = 0; i < unpinnedSockets.length - 1; i++) {
             const socketA = unpinnedSockets[i];
-            const otherSocketIndex = Math.floor(d3.randomUniform(i + 1, unpinnedSockets.length)());
+            const otherSocketIndex = Math.floor(randomUniform(i + 1, unpinnedSockets.length)());
             const socketB = unpinnedSockets[otherSocketIndex];
             socketA.swapTilesWith(socketB);
             Object.assign(socketA.tile, socketA.position);
@@ -247,7 +250,7 @@ class Gameboard {
         await sleep(1000);
 
         await tile
-            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
+            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(easeQuad)
             .call(transitioningTile => {
                 transitioningTile.select('rect')
                     .attr('x', 0)
@@ -266,7 +269,7 @@ class Gameboard {
                 updatingTile
                     .attr('transform', d => `translate(${d.x}, ${d.y})`);
             })
-            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
+            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(easeQuad)
             .call(transitioningTile => {
                 this.applyTileDimensions(transitioningTile);
                 transitioningTile.select('rect');
@@ -282,12 +285,12 @@ class Gameboard {
                 updatingTile.select('.pin')
                     .style('fill-opacity', 1);
             })
-            .transition().duration(350).ease(d3.easeCubicOut)
+            .transition().duration(350).ease(easeCubicOut)
             .call(transitioningTile => {
                 transitioningTile.select('.pin')
                     .style('fill-opacity', 0);
             })
-            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(d3.easeQuad)
+            .transition().duration(500).delay(d => d.y + d.x * 0.625).ease(easeQuad)
             .call(transitioningTile => {
                 transitioningTile.select('rect')
                     .attr('x', 0)

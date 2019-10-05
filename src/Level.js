@@ -1,4 +1,5 @@
-import * as d3 from 'd3';
+import {interpolateRgb} from 'd3-interpolate';
+import {scaleLinear} from 'd3-scale';
 
 class Level {
 
@@ -9,7 +10,7 @@ class Level {
         this.nRows = nRows;
         this.pinnedTileIds = new Set(rawLevelData.pinnedTiles);
         this.showTargetStateBeforeRandomizing = rawLevelData.showTargetStateBeforeRandomizing;
-        this.interpolateFn = d3.interpolateRgb;
+        this.interpolateFn = interpolateRgb;
     }
 
     getTileData() {
@@ -43,7 +44,7 @@ class Level {
     }
 
     interpolateColors(color0, color1, nDivs) {
-        const hColorScale = d3.scaleLinear()
+        const hColorScale = scaleLinear()
             .domain([0, nDivs - 1])
             .range([color0, color1])
             .interpolate(this.interpolateFn);

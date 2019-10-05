@@ -1,4 +1,4 @@
-import * as d3 from 'd3';
+import {select} from 'd3-selection';
 import Emitter from 'tiny-emitter';
 
 class GameboardInteraction {
@@ -61,7 +61,7 @@ class GameboardInteraction {
     }
 
     onBeginGestureInTileEl(tileEl, gestureBeginClientCoordinates, pointerId, beginGestureEvent) {
-        const tile = d3.select(tileEl).datum();
+        const tile = select(tileEl).datum();
 
         if (!tile) {
             console.warn("No data found for tile element", tileEl);
