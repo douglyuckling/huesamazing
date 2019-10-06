@@ -6,28 +6,40 @@ import Gameboard from './gameboard/Gameboard';
 import levels from './levels';
 import './index.css';
 
-const contentAspectRatio = 0.644;
-const windowAspectRatio = window.innerWidth / window.innerHeight;
+function updateGameboardSize(gameboard) {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const contentAspectRatio = 0.644;
+    const windowAspectRatio = windowWidth / windowHeight;
 
-let nominalBoardHeight = NaN;
-let nominalBoardWidth = NaN;
-if (windowAspectRatio > contentAspectRatio) {
-    // Height is limiting factor; sides will be letterboxed
-    nominalBoardHeight = window.innerHeight;
-    nominalBoardWidth = nominalBoardHeight * contentAspectRatio;
-} else {
-    // Width is limiting factor; bottom will be letterboxed
-    nominalBoardWidth = window.innerWidth;
-    nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
+    let nominalBoardHeight = NaN;
+    let nominalBoardWidth = NaN;
+    if (windowAspectRatio > contentAspectRatio) {
+        // Height is limiting factor; sides will be letterboxed
+        nominalBoardHeight = windowHeight;
+        nominalBoardWidth = nominalBoardHeight * contentAspectRatio;
+    } else {
+        // Width is limiting factor; bottom will be letterboxed
+        nominalBoardWidth = windowWidth;
+        nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
+    }
+
+    gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+    const marginTop = (windowHeight - gameboard.rootEl.clientHeight) / 2;
+    gameboard.rootSelection.style('margin-top', marginTop);
 }
 
 let currentGameboard = null;
 
+window.addEventListener('resize', (resizeEvent) => {
+    if (currentGameboard) {
+        updateGameboardSize(currentGameboard);
+    }
+});
+
 async function playLevel(level) {
     currentGameboard = new Gameboard(document.body, level);
-    currentGameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
-    const marginTop = (window.innerHeight - currentGameboard.rootEl.clientHeight) / 2;
-    currentGameboard.rootSelection.style('margin-top', marginTop);
+    updateGameboardSize(currentGameboard);
 
     const results = await currentGameboard.play();
     if (results.complete) {

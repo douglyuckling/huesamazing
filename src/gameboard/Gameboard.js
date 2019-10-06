@@ -44,6 +44,13 @@ class Gameboard {
         for (const socket of this.sockets) {
             Object.assign(socket.tile, socket.position);
         }
+
+        this.getTilesSelection()
+            .call(updatingTile => {
+                updatingTile
+                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
+                this.applyTileDimensions(updatingTile);
+            });
     }
 
     async play() {
