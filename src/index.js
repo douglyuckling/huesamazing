@@ -6,40 +6,20 @@ import Gameboard from './gameboard/Gameboard';
 import levels from './levels';
 import './index.css';
 
-async function updateGameboardSize(gameboard) {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const contentAspectRatio = 0.644;
-    const windowAspectRatio = windowWidth / windowHeight;
-
-    let nominalBoardHeight = NaN;
-    let nominalBoardWidth = NaN;
-    if (windowAspectRatio > contentAspectRatio) {
-        // Height is limiting factor; sides will be letterboxed
-        nominalBoardHeight = windowHeight;
-        nominalBoardWidth = nominalBoardHeight * contentAspectRatio;
-    } else {
-        // Width is limiting factor; bottom will be letterboxed
-        nominalBoardWidth = windowWidth;
-        nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
-    }
-
-    await gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
-    const marginTop = (windowHeight - gameboard.rootEl.clientHeight) / 2;
-    gameboard.rootSelection.style('margin-top', marginTop);
-}
+const gameboardContainerEl = document.createElement('div');
+gameboardContainerEl.classList.add('gameboard-container');
+document.body.append(gameboardContainerEl);
 
 let currentGameboard = null;
 
 window.addEventListener('resize', (resizeEvent) => {
     if (currentGameboard) {
-        updateGameboardSize(currentGameboard);
+        currentGameboard.onResizeContainer();
     }
 });
 
 async function playLevel(level) {
-    currentGameboard = new Gameboard(document.body, level);
-    await updateGameboardSize(currentGameboard);
+    currentGameboard = new Gameboard(gameboardContainerEl, level);
 
     const results = await currentGameboard.play();
     if (results.complete) {

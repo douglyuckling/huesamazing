@@ -23,38 +23,71 @@ class Gameboard {
         this.resolvePlayPromise = null;
         this.resolveGesturePromise = null;
         this.currentAnimationPromise = Promise.resolve();
+        this.boardResizePromise = null;
+
+        this.onResizeContainer();
     }
 
-    async setNominalBoardSize(nominalBoardWidth, nominalBoardHeight) {
-        return this.enqueueAnimation(() => {
-            const nCols = this.level.nCols;
-            const nRows = this.level.nRows;
+    computeNominalGameboardDimensions(containerDimensions) {
+        const boardAspectRatio = 0.644;
+        const containerAspectRatio = containerDimensions.width / containerDimensions.height;
 
-            const tileWidth = Math.floor(nominalBoardWidth / nCols);
-            const tileHeight = Math.floor(nominalBoardHeight / nRows);
-            const boardWidth = tileWidth * nCols;
-            const boardHeight = tileHeight * nRows;
+        let nominalBoardHeight = NaN;
+        let nominalBoardWidth = NaN;
+        if (containerAspectRatio > boardAspectRatio) {
+            // Height is limiting factor; sides will be letterboxed
+            nominalBoardHeight = containerDimensions.height;
+            nominalBoardWidth = nominalBoardHeight * boardAspectRatio;
+        } else {
+            // Width is limiting factor; bottom will be letterboxed
+            nominalBoardWidth = containerDimensions.width;
+            nominalBoardHeight = nominalBoardWidth / boardAspectRatio;
+        }
 
-            this.rootSelection
-                .attr('width', boardWidth)
-                .attr('height', boardHeight);
+        return {width: nominalBoardWidth, height: nominalBoardHeight};
+    }
 
-            this.defaultTileDimensions = Object.freeze({
-                width: tileWidth,
-                height: tileHeight,
-            });
+    async onResizeContainer() {
+        if (!this.boardResizePromise) {
+            this.boardResizePromise = this.enqueueAnimation(() => {
+                this.boardResizePromise = null;
 
-            for (const socket of this.sockets) {
-                Object.assign(socket.tile, socket.position);
-            }
+                const containerEl = this.rootEl.parentElement;
+                const containerDimensions = containerEl.getBoundingClientRect();
+                const nominalDimensions = this.computeNominalGameboardDimensions(containerDimensions);
+                const nCols = this.level.nCols;
+                const nRows = this.level.nRows;
 
-            this.getTilesSelection()
-                .call(updatingTile => {
-                    updatingTile
-                        .attr('transform', d => `translate(${d.x}, ${d.y})`);
-                    this.applyTileDimensions(updatingTile);
+                const tileWidth = Math.floor(nominalDimensions.width / nCols);
+                const tileHeight = Math.floor(nominalDimensions.height / nRows);
+                const boardWidth = tileWidth * nCols;
+                const boardHeight = tileHeight * nRows;
+                const marginTop = (containerDimensions.height - boardHeight) / 2;
+
+                this.rootSelection
+                    .attr('width', boardWidth)
+                    .attr('height', boardHeight)
+                    .style('margin-top', marginTop);
+
+                this.defaultTileDimensions = Object.freeze({
+                    width: tileWidth,
+                    height: tileHeight,
                 });
-        });
+
+                for (const socket of this.sockets) {
+                    Object.assign(socket.tile, socket.position);
+                }
+
+                this.getTilesSelection()
+                    .call(updatingTile => {
+                        updatingTile
+                            .attr('transform', d => `translate(${d.x}, ${d.y})`);
+                        this.applyTileDimensions(updatingTile);
+                    });
+            });
+        }
+
+        return this.boardResizePromise;
     }
 
     async play() {
