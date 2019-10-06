@@ -21,36 +21,40 @@ class Gameboard {
         this.attachEventListeners();
 
         this.resolvePlayPromise = null;
+        this.resolveGesturePromise = null;
+        this.currentAnimationPromise = Promise.resolve();
     }
 
-    setNominalBoardSize(nominalBoardWidth, nominalBoardHeight) {
-        const nCols = this.level.nCols;
-        const nRows = this.level.nRows;
+    async setNominalBoardSize(nominalBoardWidth, nominalBoardHeight) {
+        return this.enqueueAnimation(() => {
+            const nCols = this.level.nCols;
+            const nRows = this.level.nRows;
 
-        const tileWidth = Math.floor(nominalBoardWidth / nCols);
-        const tileHeight = Math.floor(nominalBoardHeight / nRows);
-        const boardWidth = tileWidth * nCols;
-        const boardHeight = tileHeight * nRows;
+            const tileWidth = Math.floor(nominalBoardWidth / nCols);
+            const tileHeight = Math.floor(nominalBoardHeight / nRows);
+            const boardWidth = tileWidth * nCols;
+            const boardHeight = tileHeight * nRows;
 
-        this.rootSelection
-            .attr('width', boardWidth)
-            .attr('height', boardHeight);
+            this.rootSelection
+                .attr('width', boardWidth)
+                .attr('height', boardHeight);
 
-        this.defaultTileDimensions = Object.freeze({
-            width: tileWidth,
-            height: tileHeight,
-        });
-
-        for (const socket of this.sockets) {
-            Object.assign(socket.tile, socket.position);
-        }
-
-        this.getTilesSelection()
-            .call(updatingTile => {
-                updatingTile
-                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
-                this.applyTileDimensions(updatingTile);
+            this.defaultTileDimensions = Object.freeze({
+                width: tileWidth,
+                height: tileHeight,
             });
+
+            for (const socket of this.sockets) {
+                Object.assign(socket.tile, socket.position);
+            }
+
+            this.getTilesSelection()
+                .call(updatingTile => {
+                    updatingTile
+                        .attr('transform', d => `translate(${d.x}, ${d.y})`);
+                    this.applyTileDimensions(updatingTile);
+                });
+        });
     }
 
     async play() {
@@ -58,13 +62,20 @@ class Gameboard {
             throw Error("Illegal state: play() has already been invoked on this Gameboard");
         }
 
+        await this.currentAnimationPromise;
+
         this.numberOfMoves = 0;
-        this.renderTilesHidden(this.level.showTargetStateBeforeRandomizing);
-        if (this.level.showTargetStateBeforeRandomizing) {
-            await this.animateOutUnpinnedTilesBeforeRandomizing();
-        }
-        this.randomizeTiles();
-        await this.animateInUnpinnedTilesAfterRandomizing();
+        await this.enqueueAnimation(async () => {
+            this.renderTilesHidden(this.level.showTargetStateBeforeRandomizing);
+            if (this.level.showTargetStateBeforeRandomizing) {
+                await this.animateOutUnpinnedTilesBeforeRandomizing();
+            }
+
+            this.randomizeTiles();
+
+            await this.animateInUnpinnedTilesAfterRandomizing();
+        });
+
         this.interaction.activate();
 
         const results = await new Promise((resolve) => {
@@ -96,14 +107,20 @@ class Gameboard {
     }
 
     onBeginTileGesture(gesture) {
-        Object.assign(gesture.tile, {scale: activeTileScalingFactor});
+        this.enqueueAnimation(() => {
+            Object.assign(gesture.tile, {scale: activeTileScalingFactor});
 
-        this.getTilesSelection([gesture.tile])
-            .raise()
-            .transition()
-            .call(updatingTileSelection => {
-                this.applyTileDimensions(updatingTileSelection);
+            this.getTilesSelection([gesture.tile])
+                .raise()
+                .transition()
+                .call(updatingTileSelection => {
+                    this.applyTileDimensions(updatingTileSelection);
+                });
+
+            return new Promise(resolve => {
+                this.resolveGesturePromise = resolve;
             });
+        });
     }
 
     onUpdateTileGesture(gesture) {
@@ -111,78 +128,97 @@ class Gameboard {
             .attr('transform', d => `translate(${d.x}, ${d.y})`);
     }
 
-    onCompleteTileDragBasedSwapGesture(socketA, socketB) {
+    async onCompleteTileDragBasedSwapGesture(socketA, socketB) {
         socketA.swapTilesWith(socketB);
         Object.assign(socketA.tile, socketA.position, {scale: 1});
         Object.assign(socketB.tile, socketB.position, {scale: 1});
 
-        this.getTilesSelection([socketA.tile, socketB.tile])
+        await this.getTilesSelection([socketA.tile, socketB.tile])
             .raise()
             .transition().duration(500)
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
-            });
+            })
+            .end();
+
         this.incrementNumberOfMoves();
         this.checkForWin();
+
+        this.resolveGesturePromise();
     }
 
-    onAbortTileDragBasedSwapGesture(originalSocket, draggedOverOtherTiles) {
+    async onAbortTileDragBasedSwapGesture(originalSocket, draggedOverOtherTiles) {
         Object.assign(originalSocket.tile, originalSocket.position, {scale: 1});
 
-        this.getTilesSelection([originalSocket.tile])
+        await this.getTilesSelection([originalSocket.tile])
             .transition()
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
-            });
+            })
+            .end();
 
         if (draggedOverOtherTiles) {
             this.incrementNumberOfMoves();
         }
+
+        this.resolveGesturePromise();
     }
 
-    onCompleteTileSelectionGesture(socket) {
+    async onCompleteTileSelectionGesture(socket) {
         Object.assign(socket.tile, socket.position);
 
-        this.getTilesSelection([socket.tile])
+        await this.getTilesSelection([socket.tile])
             .transition().duration(100)
-            .attr('transform', d => `translate(${d.x}, ${d.y})`);
+            .attr('transform', d => `translate(${d.x}, ${d.y})`)
+            .end();
+
+        this.resolveGesturePromise();
     }
 
-    onAbortTileSelectionGesture(socket) {
+    async onAbortTileSelectionGesture(socket) {
         Object.assign(socket.tile, socket.position, {scale: 1});
 
-        this.getTilesSelection([socket.tile])
+        await this.getTilesSelection([socket.tile])
             .transition().duration(100)
-            .attr('transform', d => `translate(${d.x}, ${d.y})`);
+            .attr('transform', d => `translate(${d.x}, ${d.y})`)
+            .end();
+
+        this.resolveGesturePromise();
     }
 
-    onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
+    async onCompleteTileSelectionBasedSwapGesture(socketA, socketB) {
         socketA.swapTilesWith(socketB);
         Object.assign(socketA.tile, socketA.position, {scale: 1});
         Object.assign(socketB.tile, socketB.position, {scale: 1});
 
-        this.getTilesSelection([socketA.tile, socketB.tile])
+        await this.getTilesSelection([socketA.tile, socketB.tile])
             .transition().duration(500)
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
-            });
+            })
+            .end();
 
         this.incrementNumberOfMoves();
         this.checkForWin();
+
+        this.resolveGesturePromise();
     }
 
-    onAbortTileSelectionBasedSwapGesture(originalSocket) {
+    async onAbortTileSelectionBasedSwapGesture(originalSocket) {
         Object.assign(originalSocket.tile, originalSocket.position, {scale: 1});
 
-        this.getTilesSelection([originalSocket.tile])
+        await this.getTilesSelection([originalSocket.tile])
             .transition()
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .call(updatingTileSelection => {
                 this.applyTileDimensions(updatingTileSelection);
-            });
+            })
+            .end();
+
+        this.resolveGesturePromise();
     }
 
     randomizeTiles() {
@@ -325,15 +361,23 @@ class Gameboard {
     async onWin() {
         this.interaction.deactivate();
 
-        await sleep(1000);
-        await this.animateTilesOutAfterWin();
+        await this.enqueueAnimation(async () => {
+            await sleep(1000);
+            await this.animateTilesOutAfterWin();
+        });
         this.resolvePlayPromise({complete: true, numberOfMoves: this.numberOfMoves});
     }
 
     async abort() {
         this.interaction.deactivate();
 
+        await this.currentAnimationPromise;
         this.resolvePlayPromise({complete: false, numberOfMoves: this.numberOfMoves});
+    }
+
+    enqueueAnimation(callback) {
+        this.currentAnimationPromise = this.currentAnimationPromise.then(callback);
+        return this.currentAnimationPromise;
     }
 
 }

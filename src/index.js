@@ -6,7 +6,7 @@ import Gameboard from './gameboard/Gameboard';
 import levels from './levels';
 import './index.css';
 
-function updateGameboardSize(gameboard) {
+async function updateGameboardSize(gameboard) {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     const contentAspectRatio = 0.644;
@@ -24,7 +24,7 @@ function updateGameboardSize(gameboard) {
         nominalBoardHeight = nominalBoardWidth / contentAspectRatio;
     }
 
-    gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
+    await gameboard.setNominalBoardSize(nominalBoardWidth, nominalBoardHeight);
     const marginTop = (windowHeight - gameboard.rootEl.clientHeight) / 2;
     gameboard.rootSelection.style('margin-top', marginTop);
 }
@@ -39,7 +39,7 @@ window.addEventListener('resize', (resizeEvent) => {
 
 async function playLevel(level) {
     currentGameboard = new Gameboard(document.body, level);
-    updateGameboardSize(currentGameboard);
+    await updateGameboardSize(currentGameboard);
 
     const results = await currentGameboard.play();
     if (results.complete) {
